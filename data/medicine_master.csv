@@ -1,0 +1,3 @@
+medicine_id,name,unit,category,critical,min_safety_stock
+MED-01,ORS Sachet,sachet,Oral Rehydration,true,200
+MED-02,Paracetamol 500mg,tablet,Analgesic,true,400

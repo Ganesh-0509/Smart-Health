@@ -1,0 +1,3 @@
+phc_id,name,type,block,district,latitude,longitude,catchment_population,priority_level
+PHC-01,Rampur PHC,PHC,Rampur,Bareilly,28.81,79.02,32000,2
+PHC-03,Sadar CHC,CHC,Sadar,Bareilly,28.35,79.44,68000,1

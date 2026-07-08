@@ -1,0 +1,31 @@
+# Smart Health — local orchestration.
+#
+#   docker compose up backend            # API on SQLite (zero setup)
+#   docker compose --profile postgres up # API + PostgreSQL
+#
+# The frontend runs via `npm run dev` in ./frontend (see frontend/README.md).
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Uncomment to use the postgres service instead of SQLite:
+      # DATABASE_URL: postgresql+psycopg://smarthealth:smarthealth@db:5432/smarthealth
+      DISTRICT_NAME: Bareilly
+    # depends_on: [db]   # enable when using postgres
+
+  db:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: smarthealth
+      POSTGRES_PASSWORD: smarthealth
+      POSTGRES_DB: smarthealth
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
