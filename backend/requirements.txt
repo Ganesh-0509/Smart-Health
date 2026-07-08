@@ -1,0 +1,24 @@
+# Smart Health — backend dependencies
+# Pinned to versions that install reliably on Windows / Python 3.12.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+SQLAlchemy==2.0.36
+pydantic==2.10.4
+pydantic-settings==2.7.1
+pandas==2.2.3
+numpy==2.1.3
+scikit-learn==1.6.0
+python-dateutil==2.9.0.post0
+
+# Optimization solver. Pip-installable on Windows; the app falls back to a
+# built-in greedy optimizer automatically if this is unavailable.
+ortools==9.11.4210
+
+# Optional accelerated forecaster. Not required — the ML layer falls back to
+# scikit-learn's GradientBoostingRegressor if this import fails.
+# lightgbm==4.5.0
+
+# Google AI (Gemini) — the project's Google-technology layer. Optional at runtime:
+# every AI feature falls back to deterministic templates when no GEMINI_API_KEY is
+# set, so the app runs without this too. Install to enable live AI.
+google-genai==1.15.0
