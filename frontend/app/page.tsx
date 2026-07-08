@@ -120,8 +120,6 @@ export default function LoginPage() {
           {t("login_cta")}
           <ArrowRight className="h-4 w-4" aria-hidden />
         </button>
-
-        <p className="mt-4 text-center text-xs text-ink-faint">{t("login_demo_note")}</p>
       </main>
     </div>
   );
