@@ -20,6 +20,7 @@ export const dict = {
   nav_doctors: { en: "Doctors", hi: "डॉक्टर" },
   nav_tests: { en: "Tests", hi: "जांच" },
   nav_district: { en: "District", hi: "जिला" },
+  nav_map: { en: "Facility map", hi: "केंद्र मानचित्र" },
   nav_ingest: { en: "Stock update", hi: "स्टॉक अपडेट" },
   nav_group_operations: { en: "Operations", hi: "संचालन" },
   nav_group_planning: { en: "Planning", hi: "नियोजन" },
@@ -356,6 +357,22 @@ export const dict = {
   dist_test_gap: { en: "Test gap", hi: "जांच कमी" },
   dist_map_view: { en: "Map view", hi: "मानचित्र दृश्य" },
   dist_table_view: { en: "Table view", hi: "तालिका दृश्य" },
+
+  // Facility map (Google Maps Embed)
+  map_title: { en: "Facility map", hi: "केंद्र मानचित्र" },
+  map_subtitle: {
+    en: "Live Google Maps location of each PHC/CHC, colour-coded by risk.",
+    hi: "प्रत्येक पीएचसी/सीएचसी का लाइव Google मानचित्र स्थान, जोखिम अनुसार रंग-कोडित।",
+  },
+  map_facilities: { en: "Facilities", hi: "केंद्र" },
+  map_search_placeholder: { en: "Search a centre…", hi: "केंद्र खोजें…" },
+  map_open_in_gmaps: { en: "Open in Google Maps", hi: "Google मानचित्र में खोलें" },
+  map_key_missing_title: { en: "Add a Google Maps key to embed the live map", hi: "लाइव मानचित्र एम्बेड करने के लिए Google मानचित्र कुंजी जोड़ें" },
+  map_key_missing_body: {
+    en: "Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (Maps Embed API — free, no billing) in frontend/.env.local. Until then, use the buttons below to open each centre in Google Maps.",
+    hi: "frontend/.env.local में NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (Maps Embed API — निःशुल्क) सेट करें। तब तक, प्रत्येक केंद्र को Google मानचित्र में खोलने के लिए नीचे दिए बटन का उपयोग करें।",
+  },
+  map_no_results: { en: "No centres match your search.", hi: "आपकी खोज से कोई केंद्र मेल नहीं खाता।" },
 
   // States
   state_loading: { en: "Loading…", hi: "लोड हो रहा है…" },

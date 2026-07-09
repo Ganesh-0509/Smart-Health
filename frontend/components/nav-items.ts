@@ -10,6 +10,7 @@ import {
   Stethoscope,
   FlaskConical,
   Map,
+  MapPin,
   Upload,
   Sparkles,
   type LucideIcon,
@@ -52,6 +53,7 @@ export const navGroups: NavGroup[] = [
     titleKey: "nav_group_intelligence",
     items: [
       { href: "/district", labelKey: "nav_district", icon: Map },
+      { href: "/map", labelKey: "nav_map", icon: MapPin },
       { href: "/assistant", labelKey: "nav_assistant", icon: Sparkles },
     ],
   },
