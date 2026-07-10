@@ -10,6 +10,10 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: [
+          // Latin UI face…
+          "var(--font-inter)",
+          // …then the Devanagari face for Hindi glyphs (per-glyph fallback).
+          "var(--font-noto-devanagari)",
           "system-ui",
           "-apple-system",
           "Segoe UI",

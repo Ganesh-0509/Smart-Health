@@ -14,11 +14,11 @@ export const ROLE_ROUTES: Record<Role, readonly string[]> = {
   // Front-line stock keeper: what's on the shelf, what's expiring, log updates.
   pharmacist: ["/dashboard", "/inventory", "/ingest", "/alerts"],
   // Clinical operations at the facility: beds, staff, patients, diagnostics.
-  medical_officer: ["/dashboard", "/beds", "/doctors", "/footfall", "/tests", "/alerts"],
+  medical_officer: ["/dashboard", "/beds", "/doctors", "/footfall", "/tests", "/alerts", "/map"],
   // Planning & approvals across PHCs in the block.
   block_manager: ["/dashboard", "/forecast", "/recommendations", "/reports", "/alerts"],
   // District intelligence & oversight.
-  district_officer: ["/dashboard", "/district", "/reports", "/forecast", "/assistant"],
+  district_officer: ["/dashboard", "/district", "/reports", "/forecast", "/assistant", "/map"],
   // Full system access.
   admin: [ALL_ROUTES],
 };

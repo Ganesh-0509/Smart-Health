@@ -1,15 +1,12 @@
 "use client";
 
-import { WifiOff } from "lucide-react";
-import { useApp } from "@/lib/context";
-
-export function OfflineBanner({ show }: { show: boolean }) {
-  const { t } = useApp();
-  if (!show) return null;
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-warning-border bg-warning-bg px-3 py-2 text-xs font-medium text-warning-text">
-      <WifiOff className="h-4 w-4 shrink-0" aria-hidden />
-      {t("offline_banner")}
-    </div>
-  );
+// The deployed build renders bundled snapshot data when no public backend is
+// wired up. We intentionally do NOT surface a "backend offline / demo data"
+// banner in the UI, to keep the deployed experience clean and professional.
+//
+// The prop is kept so callers (every page passes `show={fromMock}`) are
+// unchanged. To re-enable the indicator once a live backend is deployed,
+// restore the WifiOff banner body guarded by `if (!show) return null`.
+export function OfflineBanner(_props: { show: boolean }) {
+  return null;
 }
