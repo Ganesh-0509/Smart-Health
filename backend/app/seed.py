@@ -1,15 +1,25 @@
-"""Synthetic data generator for the Smart Health demo.
+"""Data generator for the Smart Health demo — anchored to real public data.
 
-Creates a realistic district of PHCs/CHCs with 90 days of seasonal usage
-history and deliberately engineered shortage / surplus / near-expiry scenarios
-so that forecasting, optimization, alerts, and the district view all produce
-meaningful output out of the box. Deterministic (fixed RNG seed).
+The **facility master** (Bareilly district's real CD blocks, Census-2011 rural
+populations, coordinates), the **medicine master** (India NLEM-2022 essential
+medicines), and the **doctor-vacancy rates** (Rural Health Statistics 2021-22,
+Uttar Pradesh) are loaded from ``data/real/`` — real, cited government data
+(see ``data/PROVENANCE.md``). If those files are absent the seed falls back to
+built-in lists so the app still runs.
+
+Daily **stock and usage ledgers are simulated** (deterministic, RNG seed 42),
+scaled by the real block populations, with deliberately engineered shortage /
+surplus / near-expiry scenarios so forecasting, optimisation, alerts and the
+district view all produce meaningful output. No open dataset publishes PHC-level
+daily stock — that missing visibility is exactly the gap this platform closes.
 """
 from __future__ import annotations
 
+import csv as _csv
 import math
 import random
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 
@@ -23,9 +33,19 @@ RNG = random.Random(42)
 TODAY = date.today()
 HISTORY_DAYS = 90
 
-# ---- master definitions ---------------------------------------------------------
+REAL_DIR = Path(__file__).resolve().parents[2] / "data" / "real"
 
-PHCS = [
+# Real block populations are large (a block is served by a CHC/PHC + sub-centres),
+# so demand and footfall are calibrated to per-facility catchment scale.
+DEMAND_DIVISOR = 25000.0
+FOOTFALL_DIVISOR = 2500.0
+
+# Real UP doctor position at PHCs (RHS 2021-22): ~35% of sanctioned posts vacant.
+# Drives the doctor-attendance module so it mirrors real rural staffing gaps.
+PHC_DOCTOR_PRESENT_PROB = 0.65
+
+# ---- fallback master definitions (used only if data/real/ is missing) ----------
+_FALLBACK_PHCS = [
     ("PHC-01", "Rampur PHC", "PHC", "Rampur", 28.81, 79.02, 32000, 2),
     ("PHC-02", "Kila PHC", "PHC", "Kila", 28.36, 79.41, 28000, 3),
     ("PHC-03", "Sadar CHC", "CHC", "Sadar", 28.35, 79.44, 68000, 1),
@@ -37,7 +57,7 @@ PHCS = [
 ]
 
 # (id, name, unit, category, critical, safety, popularity 0..1, season, cold_chain, storage)
-MEDICINES = [
+_FALLBACK_MEDICINES = [
     ("MED-01", "ORS Sachet", "sachet", "Oral Rehydration", True, 200, 0.9, "monsoon", False, "Room temperature"),
     ("MED-02", "Paracetamol 500mg", "tablet", "Analgesic", True, 400, 1.0, "fever", False, "Room temperature"),
     ("MED-03", "Amoxicillin 250mg", "capsule", "Antibiotic", True, 250, 0.7, "none", False, "Below 25°C, dry"),
@@ -54,6 +74,91 @@ MEDICINES = [
     ("MED-14", "Cough Syrup", "bottle", "Respiratory", False, 220, 0.7, "winter", False, "Room temperature"),
     ("MED-15", "Vitamin A", "dose", "Supplement", False, 110, 0.3, "none", False, "Protect from light"),
 ]
+
+# Demand-modelling assumptions per NLEM medicine (popularity 0..1, season, critical).
+# These are modelling choices; the medicine identity/strength/form/cold-chain come
+# from the real data/real/nlem_medicines.csv (NLEM 2022).
+_MED_PARAMS = {
+    "Paracetamol": (1.0, "fever", True),
+    "Ibuprofen": (0.6, "none", False),
+    "Oral Rehydration Salts (ORS)": (0.9, "monsoon", True),
+    "Zinc sulphate": (0.6, "monsoon", False),
+    "Amoxicillin": (0.7, "none", True),
+    "Amoxicillin + Clavulanic acid": (0.5, "none", False),
+    "Azithromycin": (0.5, "none", False),
+    "Ciprofloxacin": (0.5, "none", False),
+    "Metronidazole": (0.5, "monsoon", False),
+    "Albendazole": (0.4, "none", False),
+    "Ferrous salt + Folic acid": (0.7, "none", False),
+    "Folic acid": (0.5, "none", False),
+    "Vitamin A": (0.3, "none", False),
+    "Metformin": (0.5, "none", True),
+    "Amlodipine": (0.5, "none", True),
+    "Enalapril": (0.4, "none", False),
+    "Cetirizine": (0.5, "winter", False),
+    "Salbutamol": (0.4, "winter", True),
+    "Magnesium sulphate": (0.3, "none", True),
+    "Oxytocin": (0.4, "none", True),
+    "Insulin (Soluble)": (0.35, "none", True),
+    "Measles vaccine": (0.5, "none", True),
+    "DPT vaccine": (0.6, "none", True),
+}
+_FORM_UNIT = {
+    "Tablet": "tablet", "Capsule": "capsule", "Dispersible tablet": "tablet",
+    "Chewable tablet": "tablet", "Powder for oral solution": "sachet",
+    "Injection": "vial", "Capsule/Tablet": "capsule", "Injection (lyophilised)": "dose",
+}
+
+
+def _load_real_phcs() -> list[tuple]:
+    """Real Bareilly CD blocks (Census 2011). Largest 5 modelled as CHCs."""
+    path = REAL_DIR / "bareilly_blocks.csv"
+    if not path.exists():
+        return _FALLBACK_PHCS
+    with path.open(encoding="utf-8") as f:
+        rows = [r for r in _csv.DictReader(f) if r.get("rural_population_2011")]
+    if not rows:
+        return _FALLBACK_PHCS
+    rows.sort(key=lambda r: int(r["rural_population_2011"]), reverse=True)
+    phcs = []
+    for i, r in enumerate(rows, start=1):
+        pop = int(r["rural_population_2011"])
+        typ = "CHC" if i <= 5 else "PHC"
+        lat = float(r["latitude"]) if r.get("latitude") else 28.367   # Bareilly HQ approx
+        lng = float(r["longitude"]) if r.get("longitude") else 79.430
+        prio = 1 if typ == "CHC" else (2 if pop >= 190000 else 3)
+        block = r["block_name"].strip()
+        phcs.append((f"PHC-{i:02d}", f"{block} {typ}", typ, block, lat, lng, pop, prio))
+    return phcs
+
+
+def _load_real_medicines() -> list[tuple]:
+    """Real NLEM-2022 essential medicines, enriched with demand-model params."""
+    path = REAL_DIR / "nlem_medicines.csv"
+    if not path.exists():
+        return _FALLBACK_MEDICINES
+    with path.open(encoding="utf-8") as f:
+        rows = list(_csv.DictReader(f))
+    if not rows:
+        return _FALLBACK_MEDICINES
+    meds = []
+    for i, r in enumerate(rows, start=1):
+        name = r["medicine_name"].strip()
+        strength = (r.get("strength") or "").strip()
+        form = (r.get("form") or "").strip()
+        cold = (r.get("cold_chain") or "false").strip().lower() == "true"
+        pop, season, crit = _MED_PARAMS.get(name, (0.5, "none", False))
+        unit = _FORM_UNIT.get(form, "unit")
+        disp = f"{name} {strength}" if strength and strength.lower() != "as licensed" else name
+        safety = round(80 + pop * 250)
+        storage = "2-8°C cold chain" if cold else "Room temperature"
+        category = (r.get("therapeutic_category") or "General").strip()
+        meds.append((f"MED-{i:02d}", disp, unit, category, crit, safety, pop, season, cold, storage))
+    return meds
+
+
+PHCS = _load_real_phcs()
+MEDICINES = _load_real_medicines()
 
 # per-PHC digital maturity (drives the low-connectivity / ingestion narrative)
 MATURITY = ["app", "app", "app", "smartphone", "app", "sms", "smartphone", "app"]
@@ -86,7 +191,7 @@ def _season_factor(day: date, kind: str) -> float:
 
 
 def _base_demand(pop: int, popularity: float) -> float:
-    return max(2.0, (pop / 8000.0) * popularity * 6.0)
+    return max(2.0, (pop / DEMAND_DIVISOR) * popularity * 6.0)
 
 
 def seed_all(db: Session) -> None:
@@ -111,6 +216,18 @@ def _seed_master(db: Session) -> None:
     db.flush()
 
 
+# medicine index chosen for the near-expiry return-to-store scenario (non-critical)
+def _orphan_med_index() -> int:
+    for j, m in enumerate(MEDICINES):
+        if m[1].startswith("Vitamin A"):
+            return j
+    return len(MEDICINES) - 1
+
+
+_ORPHAN_MJ = _orphan_med_index()
+_ORPHAN_PI = min(7, len(PHCS) - 1)
+
+
 def _seed_usage_and_inventory(db: Session) -> None:
     for pi, (pid, _n, _t, _b, _lat, _lng, pop, _prio) in enumerate(PHCS):
         for mj, (mid, _mn, _u, _c, _crit, safety, popularity, season_kind, _cold, _stor) in enumerate(MEDICINES):
@@ -131,11 +248,11 @@ def _seed_usage_and_inventory(db: Session) -> None:
 
             # engineer role: deficit / surplus / normal (spread across PHCs per medicine)
             role = _role(pi, mj)
-            if mj == 14:
+            if mj == _ORPHAN_MJ:
                 # Orphan near-expiry scenario (demonstrates return-to-store): one
-                # centre holds near-expiry Vitamin A surplus while no nearby PHC is
-                # in deficit for it, so the only safe action is return-to-store.
-                if pi == 7:
+                # centre holds near-expiry surplus while no nearby PHC is in deficit
+                # for it, so the only safe action is return-to-store.
+                if pi == _ORPHAN_PI:
                     stock = round(safety * 3.0 + mean_recent * 20)
                     expiry = TODAY + timedelta(days=18)
                 else:
@@ -183,11 +300,15 @@ def _role(pi: int, mj: int) -> str:
 
 
 def _seed_operational(db: Session) -> None:
+    n_phcs = len(PHCS)
+    bed_pressure_centres = {2, 4}                 # two near-full centres
+    doctor_gap_centre = 2                         # one centre with low attendance
+    test_outage_centres = {2, min(5, n_phcs - 1)}
     for pi, (pid, _n, typ, _b, _lat, _lng, pop, _prio) in enumerate(PHCS):
         # --- beds (CHCs larger) ---
         scale = 2.2 if typ == "CHC" else 1.0
         gt = int(10 * scale); it = int(2 * scale); mt = int(4 * scale)
-        pressure = 0.92 if pi in (2, 4) else RNG.uniform(0.45, 0.8)  # 2 near-full centres
+        pressure = 0.92 if pi in bed_pressure_centres else RNG.uniform(0.45, 0.8)
         db.add(Bed(phc_id=pid,
                    general_total=gt, general_occupied=min(gt, round(gt * pressure)),
                    icu_total=it, icu_occupied=min(it, round(it * pressure)),
@@ -198,19 +319,19 @@ def _seed_operational(db: Session) -> None:
         for d in range(28, 0, -1):
             day = TODAY - timedelta(days=d)
             wk = 1.2 if day.weekday() < 5 else 0.6
-            opd = max(5, round(pop / 320 * wk * RNG.uniform(0.8, 1.2)))
+            opd = max(5, round(pop / FOOTFALL_DIVISOR * wk * RNG.uniform(0.8, 1.2)))
             ipd = max(0, round(opd * 0.08))
             emg = max(0, round(opd * 0.05))
             db.add(FootfallRecord(phc_id=pid, record_date=day, opd=opd, ipd=ipd, emergency=emg))
 
-        # --- doctors (CHCs have more; some absent) ---
+        # --- doctors (CHCs have more; absence reflects real RHS UP vacancy ~35% at PHCs) ---
         n_docs = 4 if typ == "CHC" else 2
         for k in range(n_docs):
             name = DOCTOR_NAMES[(pi * 2 + k) % len(DOCTOR_NAMES)]
             roll = RNG.random()
-            status = "present" if roll < 0.7 else ("absent" if roll < 0.88 else "on_leave")
+            status = "present" if roll < PHC_DOCTOR_PRESENT_PROB else ("absent" if roll < 0.85 else "on_leave")
             # force low attendance at one centre for a doctor-gap flag
-            if pi == 2 and k >= 1:
+            if pi == doctor_gap_centre and k >= 1:
                 status = "absent"
             db.add(Doctor(phc_id=pid, name=name, specialty=SPECIALTIES[(pi + k) % len(SPECIALTIES)],
                           status=status, expected=True,
@@ -220,8 +341,7 @@ def _seed_operational(db: Session) -> None:
         for ti, (tname, tcat) in enumerate(TESTS):
             available = True
             r_en = r_hi = ""
-            # engineer 1-2 outages at a couple of centres
-            if (pi in (2, 5) and ti in (0, 3)) or RNG.random() < 0.08:
+            if (pi in test_outage_centres and ti in (0, 3)) or RNG.random() < 0.08:
                 available = False
                 r_en = RNG.choice(["Kit stock exhausted", "Reagent unavailable", "Analyzer under repair"])
                 r_hi = {"Kit stock exhausted": "किट स्टॉक समाप्त",
