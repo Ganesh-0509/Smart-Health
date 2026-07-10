@@ -1,0 +1,32 @@
+# Keep the runtime image small and free of local/dev/secret artefacts.
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Local databases and spreadsheet exports.
+*.db
+*.sqlite
+*.sqlite3
+*.xlsx
+
+# Test + tooling caches and the test suite (not needed at runtime).
+.pytest_cache/
+.ruff_cache/
+tests/
+requirements-dev.txt
+
+# Version control and CI.
+.git
+.github/
+.gitignore
+
+# Secrets — never bake service-account keys into an image.
+*.env
+.env
+*firebase-adminsdk*.json
+
+# Docs (optional; not needed to run the service).
+*.md

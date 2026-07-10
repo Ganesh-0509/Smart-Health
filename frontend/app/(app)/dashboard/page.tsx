@@ -17,6 +17,7 @@ import {
   Map,
 } from "lucide-react";
 import { useApp, pickLang } from "@/lib/context";
+import { canAccess, ROLE_FOCUS } from "@/lib/roles";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import { PageHeader } from "@/components/PageHeader";
@@ -31,16 +32,22 @@ import { EmptyState, ErrorState } from "@/components/EmptyState";
 import { num, shortDate } from "@/lib/format";
 
 export default function DashboardPage() {
-  const { t, lang, phcScope } = useApp();
+  const { t, lang, phcScope, role } = useApp();
   const fetcher = useCallback(
     () => api.getDashboard(phcScope, lang),
     [phcScope, lang],
   );
   const { data, loading, error, fromMock, reload } = useApi(fetcher, [phcScope, lang]);
 
+  // Only link a KPI/quick-link to a page this role is allowed to open.
+  const to = (href: string) => (role && canAccess(role, href) ? href : undefined);
+
   return (
     <div className="space-y-6">
-      <PageHeader title={t("nav_dashboard")} subtitle={t("appTagline")} />
+      <PageHeader
+        title={t("nav_dashboard")}
+        subtitle={role ? t(ROLE_FOCUS[role]) : t("appTagline")}
+      />
       <OfflineBanner show={fromMock} />
 
       {loading ? (
@@ -64,28 +71,28 @@ export default function DashboardPage() {
               value={data.kpis.items_at_shortage_risk}
               icon={PackageX}
               tone={data.kpis.items_at_shortage_risk > 0 ? "critical" : "healthy"}
-              href="/inventory"
+              href={to("/inventory")}
             />
             <MetricCard
               label={t("kpi_near_expiry")}
               value={data.kpis.items_near_expiry}
               icon={CalendarClock}
               tone={data.kpis.items_near_expiry > 0 ? "warning" : "healthy"}
-              href="/inventory"
+              href={to("/inventory")}
             />
             <MetricCard
               label={t("kpi_pending_recs")}
               value={data.kpis.pending_recommendations}
               icon={GitCompareArrows}
               tone="info"
-              href="/recommendations"
+              href={to("/recommendations")}
             />
             <MetricCard
               label={t("kpi_active_alerts")}
               value={data.kpis.active_alerts}
               icon={Bell}
               tone={data.kpis.active_alerts > 5 ? "warning" : "info"}
-              href="/alerts"
+              href={to("/alerts")}
             />
           </div>
 
@@ -97,7 +104,7 @@ export default function DashboardPage() {
               sub={`${t("of")} ${data.kpis.beds_total} ${t("bed_available")}`}
               icon={BedDouble}
               tone="healthy"
-              href="/beds"
+              href={to("/beds")}
             />
             <MetricCard
               label={t("kpi_doctors_present")}
@@ -108,21 +115,21 @@ export default function DashboardPage() {
                   ? "healthy"
                   : "warning"
               }
-              href="/doctors"
+              href={to("/doctors")}
             />
             <MetricCard
               label={t("kpi_footfall_today")}
               value={num(data.kpis.footfall_today)}
               icon={Users}
               tone="info"
-              href="/footfall"
+              href={to("/footfall")}
             />
             <MetricCard
               label={t("kpi_tests_unavailable")}
               value={data.kpis.tests_unavailable}
               icon={FlaskConical}
               tone={data.kpis.tests_unavailable > 0 ? "warning" : "healthy"}
-              href="/tests"
+              href={to("/tests")}
             />
           </div>
 
@@ -178,13 +185,15 @@ export default function DashboardPage() {
               <CardHeader
                 title={t("sec_top_alerts")}
                 action={
-                  <Link
-                    href="/alerts"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
-                  >
-                    {t("view_all")}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                  to("/alerts") ? (
+                    <Link
+                      href="/alerts"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
+                    >
+                      {t("view_all")}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  ) : null
                 }
               />
               {data.top_alerts.length === 0 ? (
@@ -213,7 +222,9 @@ export default function DashboardPage() {
                   { href: "/forecast", label: t("nav_forecast"), icon: LineChart },
                   { href: "/recommendations", label: t("nav_recommendations"), icon: GitCompareArrows },
                   { href: "/district", label: t("nav_district"), icon: Map },
-                ].map(({ href, label, icon: Icon }) => (
+                ]
+                  .filter(({ href }) => to(href))
+                  .map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}
                     href={href}

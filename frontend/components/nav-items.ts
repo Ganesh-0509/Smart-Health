@@ -15,6 +15,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { DictKey } from "@/lib/i18n";
+import type { Role } from "@/lib/types";
+import { canAccess } from "@/lib/roles";
 
 export interface NavItem {
   href: string;
@@ -56,3 +58,14 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+// The nav groups visible to a given role: each group keeps only the items the
+// role can access, and groups that end up empty are dropped entirely.
+export function navGroupsForRole(role: Role): NavGroup[] {
+  return navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccess(role, item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
+}

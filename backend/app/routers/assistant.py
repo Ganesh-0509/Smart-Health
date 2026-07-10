@@ -3,21 +3,23 @@
 Falls back to a deterministic answer built from the same data snapshot when
 Gemini is unavailable, so the feature always returns something useful.
 """
-from __future__ import annotations
-
-from fastapi import APIRouter, Body, Depends
-from pydantic import BaseModel
+# NOTE: no ``from __future__ import annotations`` here — the slowapi rate-limit
+# decorator wraps ``ask``, and FastAPI must see real (non-stringified) type
+# annotations to resolve the request-body model through the wrapper.
+from fastapi import APIRouter, Body, Depends, Request
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.ratelimit import limiter
 from app.services import analytics, gemini, insights
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 
 
 class AskBody(BaseModel):
-    question: str
-    lang: str = "en"
+    question: str = Field(min_length=1, max_length=2000)
+    lang: str = Field(default="en", max_length=10)
 
 
 def _snapshot(db: Session) -> dict:
@@ -99,7 +101,8 @@ def status() -> dict:
 
 
 @router.post("/ask")
-def ask(body: AskBody = Body(...), db: Session = Depends(get_db)) -> dict:
+@limiter.limit("10/minute")
+def ask(request: Request, body: AskBody = Body(...), db: Session = Depends(get_db)) -> dict:
     ctx = _snapshot(db)
     ai = gemini.answer_question(body.question, ctx, body.lang)
     answer = ai or _fallback_answer(body.question, ctx)

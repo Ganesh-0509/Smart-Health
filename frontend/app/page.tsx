@@ -14,27 +14,29 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useApp } from "@/lib/context";
+import { ROLE_FOCUS, ROLE_HOME } from "@/lib/roles";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import type { Role } from "@/lib/types";
 import type { DictKey } from "@/lib/i18n";
 
-const roles: { role: Role; labelKey: DictKey; icon: LucideIcon; descEn: string; descHi: string }[] = [
-  { role: "pharmacist", labelKey: "role_pharmacist", icon: Pill, descEn: "Stock, expiry & transfers", descHi: "स्टॉक, समाप्ति और स्थानांतरण" },
-  { role: "medical_officer", labelKey: "role_medical_officer", icon: Stethoscope, descEn: "PHC overview & forecasts", descHi: "पीएचसी अवलोकन और पूर्वानुमान" },
-  { role: "block_manager", labelKey: "role_block_manager", icon: Building2, descEn: "Compare PHCs & approve", descHi: "पीएचसी तुलना और स्वीकृति" },
-  { role: "district_officer", labelKey: "role_district_officer", icon: Landmark, descEn: "District intelligence view", descHi: "जिला इंटेलिजेंस दृश्य" },
-  { role: "admin", labelKey: "role_admin", icon: ShieldCheck, descEn: "Full system access", descHi: "पूर्ण सिस्टम पहुंच" },
+const roles: { role: Role; labelKey: DictKey; icon: LucideIcon }[] = [
+  { role: "pharmacist", labelKey: "role_pharmacist", icon: Pill },
+  { role: "medical_officer", labelKey: "role_medical_officer", icon: Stethoscope },
+  { role: "block_manager", labelKey: "role_block_manager", icon: Building2 },
+  { role: "district_officer", labelKey: "role_district_officer", icon: Landmark },
+  { role: "admin", labelKey: "role_admin", icon: ShieldCheck },
 ];
 
 export default function LoginPage() {
-  const { t, lang, setRole } = useApp();
+  const { t, setRole } = useApp();
   const router = useRouter();
   const [selected, setSelected] = useState<Role | null>(null);
 
   function enter() {
     if (!selected) return;
     setRole(selected);
-    router.push("/dashboard");
+    // Each role opens on its own control view, not a shared dashboard.
+    router.push(ROLE_HOME[selected]);
   }
 
   return (
@@ -77,7 +79,7 @@ export default function LoginPage() {
           role="radiogroup"
           aria-label={t("login_pick_role")}
         >
-          {roles.map(({ role, labelKey, icon: Icon, descEn, descHi }) => {
+          {roles.map(({ role, labelKey, icon: Icon }) => {
             const active = selected === role;
             return (
               <button
@@ -104,7 +106,7 @@ export default function LoginPage() {
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-ink">{t(labelKey)}</span>
                   <span className="block truncate text-xs text-ink-muted">
-                    {lang === "hi" ? descHi : descEn}
+                    {t(ROLE_FOCUS[role])}
                   </span>
                 </span>
               </button>

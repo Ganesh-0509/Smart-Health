@@ -22,6 +22,16 @@ npm-debug.log*
 .env.local
 *.local
 
+# Firebase / service-account credentials — NEVER commit private keys
+*firebase-adminsdk*.json
+*-service-account*.json
+*serviceAccount*.json
+smart-health-*-firebase-adminsdk-*.json
+
+# Large local data drops (not for the repo)
+*.xlsx
+village_*.xlsx
+
 # Logs
 *.log
 
