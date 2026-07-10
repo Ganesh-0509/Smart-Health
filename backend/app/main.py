@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 
 from app.core.config import settings
 from app.core.database import SessionLocal, init_db
+from app.core.ratelimit import SLOWAPI_ENABLED, limiter
 from app.models import PHC
 from app.routers import (
     alerts, assistant, dashboard, district, forecast, ingest, inventory, master,
@@ -36,12 +37,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Rate limiting (graceful: the app still boots if slowapi is unavailable).
+if SLOWAPI_ENABLED:
+    from slowapi import _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # The frontend only issues GET/POST JSON requests; keep the surface explicit.
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 for r in (master, dashboard, inventory, forecast, recommendations, alerts,

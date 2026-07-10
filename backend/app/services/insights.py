@@ -1,14 +1,42 @@
 """Cross-cutting insights: alerts, dashboard summary, district view, reports."""
 from __future__ import annotations
 
+import csv as _csv
 from collections import defaultdict
 from datetime import date, timedelta
+from functools import lru_cache
+from pathlib import Path
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import PHC, Recommendation, UsageRecord
 from app.services import analytics, modules
+
+_REAL_DIR = Path(__file__).resolve().parents[3] / "data" / "real"
+
+
+@lru_cache(maxsize=1)
+def real_health_indicators() -> list[dict]:
+    """Real NFHS-5 (2019-21) Bareilly district indicators from data/real/.
+
+    Returns [] if the file is absent, so callers degrade gracefully.
+    """
+    path = _REAL_DIR / "bareilly_health_indicators.csv"
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8") as f:
+        rows = list(_csv.DictReader(f))
+    out = []
+    for r in rows:
+        try:
+            val = float(r["value"])
+        except (KeyError, ValueError):
+            continue
+        out.append({"indicator": r.get("indicator", "").strip(), "value": val,
+                    "unit": r.get("unit", "").strip(), "source": r.get("source", "").strip(),
+                    "source_url": r.get("source_url", "").strip()})
+    return out
 
 # in-flight recommendation statuses (mirror of the router's state machine)
 OPEN_STATUSES = ("awaiting_verification", "awaiting_approval", "approved", "assigned", "picked_up")
@@ -191,11 +219,16 @@ def district_overview(db: Session) -> dict:
     scores.sort(key=lambda s: s["health_score"])
     critical = sum(1 for s in scores if s["risk_level"] == "critical")
     avg = round(sum(s["health_score"] for s in scores) / len(scores), 2) if scores else 0.0
+    indicators = real_health_indicators()
     return {
         "district": settings.district_name,
         "phc_scores": scores,
         "flagged_count": sum(1 for s in scores if s["flagged"]),
         "district_kpis": {"avg_health_score": avg, "total_phcs": len(scores), "critical_phcs": critical},
+        # Real NFHS-5 (2019-21) Bareilly district indicators (see data/PROVENANCE.md).
+        "health_indicators": indicators,
+        "data_sources": (["Census 2011", "NFHS-5 (2019-21)", "Rural Health Statistics 2021-22", "NLEM 2022"]
+                         if indicators else []),
     }
 
 

@@ -33,6 +33,28 @@ export const dict = {
   role_district_officer: { en: "District Officer", hi: "जिला अधिकारी" },
   role_admin: { en: "Administrator", hi: "प्रशासक" },
 
+  // Per-role control-view focus (login card + dashboard subtitle)
+  focus_pharmacist: {
+    en: "Stock levels, expiry and stock updates for your PHC",
+    hi: "आपके पीएचसी के लिए स्टॉक स्तर, समाप्ति और स्टॉक अपडेट",
+  },
+  focus_medical_officer: {
+    en: "Beds, doctors, footfall and diagnostics at your facility",
+    hi: "आपकी सुविधा में बेड, डॉक्टर, मरीज़ आवक और जांच",
+  },
+  focus_block_manager: {
+    en: "Forecasts, transfer approvals and reports across PHCs",
+    hi: "पीएचसी में पूर्वानुमान, स्थानांतरण स्वीकृति और रिपोर्ट",
+  },
+  focus_district_officer: {
+    en: "District-wide intelligence, scoring and oversight",
+    hi: "जिला-स्तरीय इंटेलिजेंस, स्कोरिंग और निगरानी",
+  },
+  focus_admin: {
+    en: "Full system access across every module",
+    hi: "हर मॉड्यूल में पूर्ण सिस्टम पहुंच",
+  },
+
   // Login
   login_title: { en: "Sign in to continue", hi: "जारी रखने के लिए साइन इन करें" },
   login_subtitle: {

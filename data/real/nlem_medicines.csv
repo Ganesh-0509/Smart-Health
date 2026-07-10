@@ -1,0 +1,24 @@
+medicine_name,strength,form,therapeutic_category,cold_chain,nlem_2022,source_url
+Paracetamol,500 mg,Tablet,Analgesic / Antipyretic (Non-opioid),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Ibuprofen,400 mg,Tablet,Analgesic / Anti-inflammatory (NSAID),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Oral Rehydration Salts (ORS),As licensed,Powder for oral solution,Diarrhoea / Rehydration,false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Zinc sulphate,20 mg,Dispersible tablet,Diarrhoea (used with ORS),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Amoxicillin,500 mg,Capsule,Antibiotic (Beta-lactam),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Amoxicillin + Clavulanic acid,500 mg + 125 mg,Tablet,Antibiotic (Beta-lactam + inhibitor),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Azithromycin,500 mg,Tablet,Antibiotic (Macrolide),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Ciprofloxacin,500 mg,Tablet,Antibiotic (Fluoroquinolone),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Metronidazole,400 mg,Tablet,Antibacterial / Antiprotozoal,false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Albendazole,400 mg,Chewable tablet,Anthelmintic (Deworming),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Ferrous salt + Folic acid,45 mg elemental iron + 400 mcg,Tablet,Anti-anaemia (IFA supplement),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Folic acid,5 mg,Tablet,Vitamin / Anti-anaemia,false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Vitamin A,50000 IU,Capsule/Tablet,Vitamin (VAD prophylaxis),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Metformin,500 mg,Tablet,Antidiabetic (Biguanide),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Amlodipine,5 mg,Tablet,Antihypertensive (Calcium channel blocker),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Enalapril,5 mg,Tablet,Antihypertensive (ACE inhibitor),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Cetirizine,10 mg,Tablet,Antiallergic (Antihistamine),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Salbutamol,4 mg,Tablet,Anti-asthmatic (Bronchodilator),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Magnesium sulphate,500 mg/mL,Injection,Anticonvulsant (Eclampsia/PET),false,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Oxytocin,10 IU/mL,Injection,Oxytocic (PPH prevention),true,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Insulin (Soluble),40 IU/mL,Injection,Antidiabetic (Insulin),true,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+Measles vaccine,As licensed,Injection (lyophilised),Vaccine (Immunological),true,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf
+DPT vaccine,As licensed,Injection,Vaccine (Immunological),true,true,https://cdsco.gov.in/opencms/resources/UploadCDSCOWeb/2018/UploadConsumer/nlem2022.pdf

@@ -10,6 +10,10 @@ numpy==2.1.3
 scikit-learn==1.6.0
 python-dateutil==2.9.0.post0
 
+# Lightweight in-process rate limiting for abuse-prone endpoints. The app boots
+# even if this is missing (app/core/ratelimit.py falls back to a no-op limiter).
+slowapi==0.1.10
+
 # Optimization solver. Pip-installable on Windows; the app falls back to a
 # built-in greedy optimizer automatically if this is unavailable.
 ortools==9.11.4210

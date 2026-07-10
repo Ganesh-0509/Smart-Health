@@ -23,15 +23,26 @@ def check(name, resp, validate=lambda j: True):
 
 
 def main() -> int:
+    # Self-contained + idempotent: rebuild a fresh DB so the test never depends
+    # on leftover state from a previous run.
+    from app.core.database import Base, SessionLocal, engine, init_db
+    from app.seed import seed_all
+    Base.metadata.drop_all(bind=engine)
+    init_db()
+    with SessionLocal() as db:
+        seed_all(db)
+
     with TestClient(app) as c:
         check("health", c.get("/api/health"), lambda j: j["status"] == "ok")
-        check("phcs", c.get("/api/phcs"), lambda j: len(j) == 8 and "digital_maturity" in j[0])
-        check("medicines", c.get("/api/medicines"),
-              lambda j: len(j) == 15 and any(m["cold_chain"] for m in j))
+        phcs = check("phcs", c.get("/api/phcs"), lambda j: len(j) >= 8 and "digital_maturity" in j[0])
+        n_phcs = len(phcs)
+        meds = check("medicines", c.get("/api/medicines"),
+                     lambda j: len(j) >= 8 and any(m["cold_chain"] for m in j))
+        n_meds = len(meds)
         check("dashboard", c.get("/api/dashboard/summary"),
               lambda j: j["kpis"]["beds_total"] > 0)
         inv = check("inventory", c.get("/api/inventory"),
-                    lambda j: len(j) == 120 and "data_confidence" in j[0])
+                    lambda j: len(j) == n_phcs * n_meds and "data_confidence" in j[0])
         check("inventory/risk", c.get("/api/inventory/risk"))
         check("forecast", c.get("/api/forecast?phc_id=PHC-01&medicine_id=MED-02"),
               lambda j: len(j["forecast"]) == 14)
@@ -44,11 +55,11 @@ def main() -> int:
                     lambda j: isinstance(j, list))
         check("alerts", c.get("/api/alerts"), lambda j: isinstance(j, list))
         check("reports", c.get("/api/reports/summary"), lambda j: "waste_avoided_units" in j)
-        check("beds", c.get("/api/beds"), lambda j: len(j) == 8)
+        check("beds", c.get("/api/beds"), lambda j: len(j) == n_phcs)
         check("footfall", c.get("/api/footfall"), lambda j: "series" in j)
         check("doctors", c.get("/api/doctors"), lambda j: len(j) > 0)
-        check("tests", c.get("/api/tests"), lambda j: len(j) == 64)
-        check("district", c.get("/api/district/overview"), lambda j: len(j["phc_scores"]) == 8)
+        check("tests", c.get("/api/tests"), lambda j: len(j) == n_phcs * 8)
+        check("district", c.get("/api/district/overview"), lambda j: len(j["phc_scores"]) == n_phcs)
 
         # --- data-confidence spread present ---
         confs = {i["data_confidence"] for i in inv}

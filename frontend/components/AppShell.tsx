@@ -1,20 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
+import { canAccess, ROLE_HOME } from "@/lib/roles";
 import { Sidebar } from "./Sidebar";
 import { TopNav } from "./TopNav";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { role, ready } = useApp();
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Redirect to login if no role selected (after hydration).
+  // Redirect to login if no role selected; otherwise keep the role inside the
+  // pages it is allowed to see (deep-links / stale tabs land on the role home).
   useEffect(() => {
-    if (ready && !role) router.replace("/");
-  }, [ready, role, router]);
+    if (!ready) return;
+    if (!role) {
+      router.replace("/");
+    } else if (!canAccess(role, pathname)) {
+      router.replace(ROLE_HOME[role]);
+    }
+  }, [ready, role, pathname, router]);
 
   if (!ready) {
     return (
@@ -25,6 +33,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (!role) return null;
+
+  // Don't flash a page this role can't see while the redirect is in flight.
+  if (!canAccess(role, pathname)) return null;
 
   return (
     <div className="flex min-h-screen bg-surface-sunken">

@@ -6,16 +6,18 @@ Flow:
 Any non-terminal state can be rejected (reason required). Emergencies fast-track.
 Every transition writes an immutable TransferEvent to the audit trail.
 """
-from __future__ import annotations
-
+# NOTE: no ``from __future__ import annotations`` here — the slowapi rate-limit
+# decorator wraps ``generate``, and FastAPI must see real (non-stringified) type
+# annotations to resolve the request-body models through the wrapper.
 from datetime import date, datetime
 
-from fastapi import APIRouter, Body, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.ratelimit import limiter
 from app.models import (
     DISTRICT_STORE_ID, InventorySnapshot, Medicine, PHC, Recommendation, TransferEvent,
 )
@@ -30,43 +32,45 @@ TERMINAL = ("stock_updated", "rejected")
 
 # ---- request bodies -------------------------------------------------------------
 class GenerateBody(BaseModel):
-    phc_id: str | None = None
+    phc_id: str | None = Field(default=None, max_length=50)
 
 
 class VerifyBody(BaseModel):
-    verified_by: str = "phc_pharmacist"
-    confirmed_qty: int | None = None
-    note: str = ""
+    verified_by: str = Field(default="phc_pharmacist", min_length=1, max_length=120)
+    confirmed_qty: int | None = Field(default=None, ge=0, le=1_000_000)
+    note: str = Field(default="", max_length=500)
 
 
 class ApproveBody(BaseModel):
-    approved_by: str = "block_manager"
-    actual_qty: int | None = None
-    modify_reason: str = ""
+    approved_by: str = Field(default="block_manager", min_length=1, max_length=120)
+    actual_qty: int | None = Field(default=None, ge=0, le=1_000_000)
+    modify_reason: str = Field(default="", max_length=500)
 
 
 class RejectBody(BaseModel):
-    rejected_by: str = "block_manager"
-    reason: str = ""
+    rejected_by: str = Field(default="block_manager", min_length=1, max_length=120)
+    # No min_length: an empty reason is accepted by validation but rejected by the
+    # endpoint with a 400 (business rule), which the API contract/tests depend on.
+    reason: str = Field(default="", max_length=500)
 
 
 class AssignBody(BaseModel):
-    actor: str = "logistics"
-    logistics_model: str | None = None
+    actor: str = Field(default="logistics", min_length=1, max_length=120)
+    logistics_model: str | None = Field(default=None, max_length=120)
 
 
 class PickupBody(BaseModel):
-    pickup_by: str = "delivery_agent"
+    pickup_by: str = Field(default="delivery_agent", min_length=1, max_length=120)
 
 
 class ConfirmBody(BaseModel):
-    received_by: str = "phc_pharmacist"
-    received_qty: int | None = None
-    received_condition: str = "good"
+    received_by: str = Field(default="phc_pharmacist", min_length=1, max_length=120)
+    received_qty: int | None = Field(default=None, ge=0, le=1_000_000)
+    received_condition: str = Field(default="good", min_length=1, max_length=60)
 
 
 class ActorBody(BaseModel):
-    actor: str = "district_officer"
+    actor: str = Field(default="district_officer", min_length=1, max_length=120)
 
 
 # ---- serialization --------------------------------------------------------------
@@ -155,7 +159,8 @@ def timeline(rec_id: str, db: Session = Depends(get_db)) -> list[dict]:
 
 
 @router.post("/generate")
-def generate(body: GenerateBody = Body(default=GenerateBody()),
+@limiter.limit("20/minute")
+def generate(request: Request, body: GenerateBody = Body(default=GenerateBody()),
              db: Session = Depends(get_db)) -> list[dict]:
     recommender.generate_recommendations(db, body.phc_id)
     return list_recommendations(db=db)

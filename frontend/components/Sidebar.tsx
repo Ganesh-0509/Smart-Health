@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { Activity, X } from "lucide-react";
 import { useApp } from "@/lib/context";
-import { navGroups } from "./nav-items";
+import { navGroupsForRole } from "./nav-items";
 
 export function Sidebar({
   open,
@@ -15,7 +15,8 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const { t } = useApp();
+  const { t, role } = useApp();
+  const groups = role ? navGroupsForRole(role) : [];
 
   return (
     <>
@@ -60,7 +61,7 @@ export function Sidebar({
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {navGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.titleKey} className="mb-5">
               <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
                 {t(group.titleKey)}
